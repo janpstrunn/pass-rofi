@@ -7,17 +7,17 @@ PASSWORD_STORE="$PASS_STORE/passwords/"
 OTP_STORE="$PASS_STORE/otp/"
 RECUVA_STORE="$PASS_STORE/recovery/"
 
-TOMB_KEY=${1:-$(sed -n 's/^TOMB_KEY=//p' "$PASSRC")}
-
 if [ ! -d "$PASS_STORE" ]; then
   notify-send -u normal "Pass: Error" "No PASS_STORE found!"
 fi
 
-for dir in "$PASSWORD_STORE" "$OTP_STORE" "$RECUVA_STORE"; do
-  if [ ! -d "$dir" ]; then
-    mkdir -p "$dir"
-  fi
-done
+if ls "$PASS_STORE"; then
+  for dir in "$PASSWORD_STORE" "$OTP_STORE" "$RECUVA_STORE"; do
+    if [ ! -d "$dir" ]; then
+      mkdir -p "$dir"
+    fi
+  done
+fi
 
 ENTROPY_SALT=$(sed -n 's/^ENTROPY_SALT=//p' "$PASSRC")
 ENTROPY_ITERATION=$(sed -n 's/^ENTROPY_ITERATION=//p' "$PASSRC")
@@ -50,6 +50,7 @@ div_color="#334433"
 label="#f067fc"
 
 function tomb_open() {
+  TOMB_KEY=${TOMB_KEY:-$(sed -n 's/^TOMB_KEY=//p' "$PASSRC")}
   if [ "$EXHUME" = "true" ] && [ "$GPG_ID" = "true" ]; then
     pass-tomb -e open "$TOMB_KEY" -g
   elif [ "$EXHUME" = "true" ]; then
@@ -134,6 +135,9 @@ main() {
     ;;
   esac
 
+  if ! ls "$PASS_STORE"; then
+    notify-send -u low "Your Tomb is not opened!" --expire-time=3500
+  fi
   pass=$(find "$passdir" -type f -name '*.age' -printf '%P\n' | awk -F. '{print $1}')
   menu=$(echo "${pass}" | _rofi -p "$mode" -mesg "${HELP}" -kb-custom-1 "${addpass}" -kb-custom-2 "${switch_mode}" -kb-custom-3 "${delete}" -kb-custom-4 "${edit}" -kb-custom-5 "${recuva_mode}" -kb-custom-6 "${close}" -kb-custom-7 "${close_tomb}" -kb-custom-8 "${open_tomb}")
 
@@ -156,13 +160,15 @@ main() {
     main
     ;;
   15)
-    pass close
+    pass -n close
     ;;
   16)
-    tomb slam
+    tomb slam && notify-send -u normal "Pass: Tomb" "Your tomb is closed"
     ;;
   17)
-    tomb_open
+    TOMB_KEY=${TOMB_KEY:-$(sed -n 's/^TOMB_KEY=//p' "$PASSRC")}
+    tomb_open "$TOMB_KEY" && notify-send -u normal "Pass: Tomb" "Your tomb is open"
+    main
     ;;
   0)
     case "$mode" in
@@ -192,7 +198,7 @@ main() {
   esac
 }
 
-while getopts ":hvge" opt; do
+while getopts ":hvgek:" opt; do
   case "$opt" in
   h)
     usage
@@ -207,6 +213,9 @@ while getopts ":hvge" opt; do
     ;;
   g)
     GPG_DIG=true
+    ;;
+  k)
+    TOMB_KEY="$OPTARG"
     ;;
   ?)
     echo "Error: Invalid option '-$OPTARG'" >&2
