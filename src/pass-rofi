@@ -68,7 +68,11 @@ _rofi() {
   rofi -dmenu -i -no-levenshtein-sort -width 1000 "$@"
 }
 
-error() {
+function version() {
+  echo "v.1.0.0"
+}
+
+function error() {
   notify-send -u normal "Pass: Error" "An unknown error occurred!"
 }
 
