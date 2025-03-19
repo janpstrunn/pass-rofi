@@ -33,18 +33,24 @@ mv src/pass-rofi "$HOME/.local/bin"
 ## Usage
 
 ```
-pass-rofi: Create, copy, delete and edit your passwords like a Nerd
+pass-rofi: A rofi extension for pass
 
 Usage: $0 [options] <command> [arguments]
 
 Options:
   -e             Exhume buried key to unlock a tomb
+  -k [-e -g]     Specify a Tomb Key if not present in .passrc
   -g             Create a tomb key using GPG ID
   -h             Display this help message and exit
+  -v             Display the current version number
 
 Commands:
-  help                    Display this help message and exit
-  version                 Display the current version number
+  help                     Display this help message and exit
+  version                  Display the current version number
+
+Examples:
+  pass-rofi -e -g -k tomb.key
+                 # Use a GPG key that is buried to unlock a tomb
 ```
 
 > [!IMPORTANT]
