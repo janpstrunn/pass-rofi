@@ -7,34 +7,9 @@ PASSWORD_STORE="$PASS_STORE/passwords/"
 OTP_STORE="$PASS_STORE/otp/"
 RECUVA_STORE="$PASS_STORE/recovery/"
 
-if [ ! -d "$PASS_STORE" ]; then
-  notify-send -u normal "Pass: Error" "No PASS_STORE found!"
-fi
-
-if ls "$PASS_STORE"; then
-  for dir in "$PASSWORD_STORE" "$OTP_STORE" "$RECUVA_STORE"; do
-    if [ ! -d "$dir" ]; then
-      mkdir -p "$dir"
-    fi
-  done
-fi
-
 ENTROPY_SALT=$(sed -n 's/^ENTROPY_SALT=//p' "$PASSRC")
 ENTROPY_ITERATION=$(sed -n 's/^ENTROPY_ITERATION=//p' "$PASSRC")
 ENTROPY_AMPLIFICATION=$(sed -n 's/^ENTROPY_AMPLIFICATION=//p' "$PASSRC")
-
-if ! command -v rofi &>/dev/null; then
-  echo "rofi could not be found. Please install it."
-  exit 1
-fi
-
-_rofi() {
-  rofi -dmenu -i -no-levenshtein-sort -width 1000 "$@"
-}
-
-error() {
-  notify-send -u normal "Pass: Error" "An unknown error occurred!"
-}
 
 switch_mode="Ctrl+s"
 addpass="Alt+a"
@@ -48,6 +23,54 @@ recuva_mode="Ctrl-r"
 help_color="#7c5cff"
 div_color="#334433"
 label="#f067fc"
+
+if [ ! -d "$PASS_STORE" ]; then
+  notify-send -u normal "Pass: Error" "No PASS_STORE found!"
+fi
+
+if ls "$PASS_STORE"; then
+  for dir in "$PASSWORD_STORE" "$OTP_STORE" "$RECUVA_STORE"; do
+    if [ ! -d "$dir" ]; then
+      mkdir -p "$dir"
+    fi
+  done
+fi
+
+if ! command -v rofi &>/dev/null; then
+  echo "rofi could not be found. Please install it."
+  exit 1
+fi
+
+function usage() {
+  cat <<EOF
+pass-rofi: A rofi extension for pass
+
+Usage: $0 [options] <command> [arguments]
+
+Options:
+  -e             Exhume buried key to unlock a tomb
+  -k [-e -g]     Specify a Tomb Key if not present in .passrc
+  -g             Create a tomb key using GPG ID
+  -h             Display this help message and exit
+  -v             Display the current version number
+
+Commands:
+  help                     Display this help message and exit
+  version                  Display the current version number
+
+Examples:
+  pass-rofi -e -g -k tomb.key
+                 # Use a GPG key that is buried to unlock a tomb
+EOF
+}
+
+_rofi() {
+  rofi -dmenu -i -no-levenshtein-sort -width 1000 "$@"
+}
+
+error() {
+  notify-send -u normal "Pass: Error" "An unknown error occurred!"
+}
 
 function tomb_open() {
   TOMB_KEY=${TOMB_KEY:-$(sed -n 's/^TOMB_KEY=//p' "$PASSRC")}
