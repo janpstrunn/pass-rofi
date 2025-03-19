@@ -1,7 +1,7 @@
 <img src="https://git.disroot.org/janpstrunn/images/raw/branch/main/pass.png" align="right" height="100"/>
 <br>
 
-# pass-rofi: Create, copy, delete and edit your passwords like a Nerd
+# pass-rofi: Because typing `pass` is just too much
 
 `pass-rofi` is a `rofi` script, meant to be used alongside [pass](https://github.com/janpstrunn/pass) which tries to replace the [passwordstore](https://www.passwordstore.org/) keeping its core philosophies.
 
