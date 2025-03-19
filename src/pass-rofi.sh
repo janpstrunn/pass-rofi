@@ -37,7 +37,9 @@ error() {
 switch_mode="Ctrl+s"
 addpass="Alt+a"
 delete="Ctrl-x"
-edit="Ctrl-z"
+close="Ctrl-z"
+close_tomb="Ctrl-Z"
+edit="Ctrl-y"
 recuva_mode="Ctrl-r"
 
 help_color="#7c5cff"
@@ -100,24 +102,28 @@ main() {
   case "$mode" in
   pass)
     HELP="<span color='${label}'>Modes: </span><span color='${help_color}'>${switch_mode}</span>: toggle (pass/otp) <span color='${div_color}'>|</span> <span color='${help_color}'>${recuva_mode}</span>: toggle recuva
+<span color='${label}'>Close: </span> <span color='${help_color}'>${close}</span>: close key <span color='${div_color}'>|</span> <span color='${help_color}'>${close_tomb}</span>: close tomb
 <span color='${label}'>Actions: </span> <span color='${help_color}'>${addpass}</span>: Add <span color='${div_color}'>|</span> <span color='${help_color}'>${delete}</span>: Delete"
     passdir="$PASSWORD_STORE"
     ;;
   otp)
     HELP="<span color='${label}'>Modes: </span><span color='${help_color}'>${switch_mode}</span>: toggle (pass/otp) <span color='${div_color}'>|</span> <span color='${help_color}'>${recuva_mode}</span>: toggle recuva
+<span color='${label}'>Close: </span> <span color='${help_color}'>${close}</span>: close key <span color='${div_color}'>|</span> <span color='${help_color}'>${close_tomb}</span>: close tomb
 <span color='${label}'>Actions: </span><span color='${help_color}'>${addpass}</span>: Add <span color='${div_color}'>|</span> <span color='${help_color}'>${delete}</span>: Delete <span color='${div_color}'>|</span> <span color='${help_color}'>${edit}</span>: Edit"
     passdir="$OTP_STORE"
     ;;
   recuva)
-    HELP="<span color='${label}'>Modes: </span><span color='${help_color}'>${switch_mode}</span>: toggle (pass/otp) <span color='${div_color}'>|</span> <span color='${help_color}'>${recuva_mode}</span>: toggle recuva"
+    HELP="<span color='${label}'>Modes: </span><span color='${help_color}'>${switch_mode}</span>: toggle (pass/otp) <span color='${div_color}'>|</span> <span color='${help_color}'>${recuva_mode}</span>: toggle recuva
+<span color='${label}'>Close: </span> <span color='${help_color}'>${close}</span>: close key <span color='${div_color}'>|</span> <span color='${help_color}'>${close_tomb}</span>: close tomb"
     passdir="$RECUVA_STORE"
     ;;
   esac
 
   pass=$(find "$passdir" -type f -name '*.age' -printf '%P\n' | awk -F. '{print $1}')
-  menu=$(echo "${pass}" | _rofi -p "$mode" -mesg "${HELP}" -kb-custom-1 "${addpass}" -kb-custom-2 "${switch_mode}" -kb-custom-3 "${delete}" -kb-custom-4 "${edit}" -kb-custom-5 "${recuva_mode}")
+  menu=$(echo "${pass}" | _rofi -p "$mode" -mesg "${HELP}" -kb-custom-1 "${addpass}" -kb-custom-2 "${switch_mode}" -kb-custom-3 "${delete}" -kb-custom-4 "${edit}" -kb-custom-5 "${recuva_mode}" -kb-custom-6 "${close}" -kb-custom-7 "${close_tomb}")
 
   val=$?
+  notify-send "$val"
   case "$val" in
   1) exit ;;
   12) deleteMenu ;;
@@ -134,6 +140,12 @@ main() {
   14)
     mode=recuva
     main
+    ;;
+  15)
+    pass close
+    ;;
+  16)
+    tomb slam
     ;;
   0)
     case "$mode" in
