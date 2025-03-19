@@ -7,6 +7,8 @@ PASSWORD_STORE="$PASS_STORE/passwords/"
 OTP_STORE="$PASS_STORE/otp/"
 RECUVA_STORE="$PASS_STORE/recovery/"
 
+TOMB_KEY=${1:-$(sed -n 's/^TOMB_KEY=//p' "$PASSRC")}
+
 if [ ! -d "$PASS_STORE" ]; then
   notify-send -u normal "Pass: Error" "No PASS_STORE found!"
 fi
@@ -39,12 +41,25 @@ addpass="Alt+a"
 delete="Ctrl-x"
 close="Ctrl-z"
 close_tomb="Ctrl-Z"
+open_tomb="Ctrl-o"
 edit="Ctrl-y"
 recuva_mode="Ctrl-r"
 
 help_color="#7c5cff"
 div_color="#334433"
 label="#f067fc"
+
+function tomb_open() {
+  if [ "$EXHUME" = "true" ] && [ "$GPG_ID" = "true" ]; then
+    pass-tomb -e open "$TOMB_KEY" -g
+  elif [ "$EXHUME" = "true" ]; then
+    pass-tomb -e open "$TOMB_KEY"
+  elif [ "$GPG_ID" = "true" ]; then
+    pass-tomb open "$TOMB_KEY" -g
+  else
+    pass-tomb open "$TOMB_KEY"
+  fi
+}
 
 function deleteMenu() {
   delask=$(echo -e "1. Yes\n2. No" | _rofi -p '> ' -mesg "<span color='${label}'>Really delete</span> <span color='${help_color}'>$menu?</span>")
@@ -75,11 +90,11 @@ function addMenu() {
   elif [[ $val -eq 0 ]]; then
     case "$mode" in
     pass)
-      pass -n generate "$addmenu" 72 || error
+      pass -n -d zenity generate "$addmenu" 72 || error
       ;;
     otp)
       otp_key=$(zenity --entry --title="Enter OTP Key" --text="Please enter your OTP Key. No spaces allowed:")
-      pass-otp -n generate "$addmenu" "$otp_key" || error
+      pass-otp -n -d zenity generate "$addmenu" "$otp_key" || error
       ;;
     esac
   fi
@@ -90,10 +105,10 @@ function editMenu() {
   term=${TERMCMD:-kitty}
   case "$mode" in
   otp)
-    $term -- sh -c "pass-otp edit \"$menu\""
+    $term -- sh -c "pass-otp -d zenity edit \"$menu\""
     ;;
   recuva)
-    $term -- sh -c "pass-otp recuva \"$menu\""
+    $term -- sh -c "pass-otp -d zenity recuva \"$menu\""
     ;;
   esac
 }
@@ -102,7 +117,7 @@ main() {
   case "$mode" in
   pass)
     HELP="<span color='${label}'>Modes: </span><span color='${help_color}'>${switch_mode}</span>: toggle (pass/otp) <span color='${div_color}'>|</span> <span color='${help_color}'>${recuva_mode}</span>: toggle recuva
-<span color='${label}'>Close: </span> <span color='${help_color}'>${close}</span>: close key <span color='${div_color}'>|</span> <span color='${help_color}'>${close_tomb}</span>: close tomb
+<span color='${label}'>Close: </span> <span color='${help_color}'>${close}</span>: close key <span color='${div_color}'>|</span> <span color='${help_color}'>${close_tomb}</span>: close tomb <span color='${div_color}'>|</span> <span color='${help_color}'>${open_tomb}</span>: open tomb
 <span color='${label}'>Actions: </span> <span color='${help_color}'>${addpass}</span>: Add <span color='${div_color}'>|</span> <span color='${help_color}'>${delete}</span>: Delete"
     passdir="$PASSWORD_STORE"
     ;;
@@ -120,10 +135,9 @@ main() {
   esac
 
   pass=$(find "$passdir" -type f -name '*.age' -printf '%P\n' | awk -F. '{print $1}')
-  menu=$(echo "${pass}" | _rofi -p "$mode" -mesg "${HELP}" -kb-custom-1 "${addpass}" -kb-custom-2 "${switch_mode}" -kb-custom-3 "${delete}" -kb-custom-4 "${edit}" -kb-custom-5 "${recuva_mode}" -kb-custom-6 "${close}" -kb-custom-7 "${close_tomb}")
+  menu=$(echo "${pass}" | _rofi -p "$mode" -mesg "${HELP}" -kb-custom-1 "${addpass}" -kb-custom-2 "${switch_mode}" -kb-custom-3 "${delete}" -kb-custom-4 "${edit}" -kb-custom-5 "${recuva_mode}" -kb-custom-6 "${close}" -kb-custom-7 "${close_tomb}" -kb-custom-8 "${open_tomb}")
 
   val=$?
-  notify-send "$val"
   case "$val" in
   1) exit ;;
   12) deleteMenu ;;
@@ -147,32 +161,60 @@ main() {
   16)
     tomb slam
     ;;
+  17)
+    tomb_open
+    ;;
   0)
     case "$mode" in
     pass)
       if [ "$ENTROPY_AMPLIFICATION" = "true" ]; then
-        pass -n -a -s "$ENTROPY_SALT" -i "$ENTROPY_ITERATION" "$menu"
+        pass -d zenity -n -a -s "$ENTROPY_SALT" -i "$ENTROPY_ITERATION" "$menu"
       else
-        pass -n cp "$menu"
+        pass -d zenity -n cp "$menu"
       fi
       ;;
     otp)
       if [ "$ENTROPY_AMPLIFICATION" = "true" ]; then
-        pass-otp -n -a -s "$ENTROPY_SALT" -i "$ENTROPY_ITERATION" cp "$menu"
+        pass-otp -d zenity -n -a -s "$ENTROPY_SALT" -i "$ENTROPY_ITERATION" cp "$menu"
       else
-        pass-otp -n cp "$menu"
+        pass-otp -d zenity -n cp "$menu"
       fi
       ;;
     recuva)
       if [ "$ENTROPY_AMPLIFICATION" = "true" ]; then
-        pass-otp -n -a -s "$ENTROPY_SALT" -i "$ENTROPY_ITERATION" recuva "$menu"
+        pass-otp -d zenity -n -a -s "$ENTROPY_SALT" -i "$ENTROPY_ITERATION" recuva "$menu"
       else
-        pass-otp -n recuva "$menu"
+        pass-otp -d zenity -n recuva "$menu"
       fi
       ;;
     esac
     ;;
   esac
 }
+
+while getopts ":hvge" opt; do
+  case "$opt" in
+  h)
+    usage
+    exit 0
+    ;;
+  v)
+    version
+    exit 0
+    ;;
+  e)
+    EXHUME=true
+    ;;
+  g)
+    GPG_DIG=true
+    ;;
+  ?)
+    echo "Error: Invalid option '-$OPTARG'" >&2
+    usage
+    ;;
+  esac
+done
+
+shift $((OPTIND - 1))
 
 mode=pass main
