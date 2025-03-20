@@ -24,10 +24,8 @@ It's a tool that combines all the `pass`, `pass-otp` and `pass-tomb` functionali
 ## Installation
 
 ```
-git clone https://github.com/janpstrunn/pass-rofi
-cd pass-rofi
-chmod 700 src/pass-rofi
-mv src/pass-rofi "$HOME/.local/bin"
+
+curl -sSL https://github.com/janpstrunn/pass-rofi/raw/main/install.sh | bash
 ```
 
 ## Usage
