@@ -11,6 +11,22 @@ ENTROPY_SALT=$(sed -n 's/^ENTROPY_SALT=//p' "$PASSRC")
 ENTROPY_ITERATION=$(sed -n 's/^ENTROPY_ITERATION=//p' "$PASSRC")
 ENTROPY_AMPLIFICATION=$(sed -n 's/^ENTROPY_AMPLIFICATION=//p' "$PASSRC")
 
+DIALOG=${DIALOG:-$(sed -n 's/^DIALOG=//p' "$PASSRC")}
+
+if [ "$DIALOG" == "custom" ]; then
+  CUSTOM_CMD_PASSWORD=$(sed -n 's/^CUSTOM_CMD_PASSWORD=//p' "$PASSRC")
+  CUSTOM_CMD_PIN=$(sed -n 's/^CUSTOM_CMD_PASSWORD=//p' "$PASSRC")
+  if [ -z "$CUSTOM_CMD_PASSWORD" ] || [ -z "$CUSTOM_CMD_PIN" ]; then
+    notify-send -u critical "Pass: Error" "No custom commands in .passrc!" --expire-time=5000
+  fi
+  NOTIFICATION_CMD="$CUSTOM_CMD_PASSWORD $CUSTOM_CMD_PIN"
+else
+  NOTIFICATION_CMD=zenity
+fi
+
+ENTROPY_ARGS="-n -d $NOTIFICATION_CMD -a -s $ENTROPY_SALT -i $ENTROPY_ITERATION"
+NORMAL_ARGS="-n -d $NOTIFICATION_CMD"
+
 switch_mode="Ctrl+s"
 addpass="Alt+a"
 delete="Ctrl-x"
@@ -48,6 +64,7 @@ pass-rofi: A rofi extension for pass
 Usage: $0 [options] <command> [arguments]
 
 Options:
+  -d             Enable custom dialog
   -e             Exhume buried key to unlock a tomb
   -k [-e -g]     Specify a Tomb Key if not present in .passrc
   -g             Create a tomb key using GPG ID
@@ -69,7 +86,7 @@ _rofi() {
 }
 
 function version() {
-  echo "v.1.1.0"
+  echo "v.1.2.0"
 }
 
 function error() {
@@ -127,17 +144,17 @@ function addMenu() {
   elif [[ $val -eq 0 ]]; then
     case "$mode" in
     pass)
-      pass -n -d zenity generate "$addmenu" 72
+      pass "$NORMAL_ARGS" generate "$addmenu" 72
       ;;
     otp)
       otp_key=$(zenity --entry --title="Enter OTP Key" --text="Please enter your OTP Key. No spaces allowed:")
-      pass-otp -n -d zenity generate "$addmenu" "$otp_key"
+      pass-otp "$NORMAL_ARGS" generate "$addmenu" "$otp_key"
       ;;
     recuva)
       if [ "$ENTROPY_AMPLIFICATION" = "true" ]; then
-        pass-otp -n -a -s "$ENTROPY_SALT" -i "$ENTROPY_ITERATION" recuva "$addmenu"
+        pass-otp "$ENTROPY_ARGS" recuva "$addmenu"
       else
-        pass-otp -n recuva "$addmenu"
+        pass-otp "$NORMAL_ARGS" recuva "$addmenu"
       fi
       ;;
     esac
@@ -150,16 +167,16 @@ function editMenu() {
   case "$mode" in
   otp)
     if [ "$ENTROPY_AMPLIFICATION" = "true" ]; then
-      $term -- sh -c "pass-otp -n -d zenity -a -s $ENTROPY_SALT -i $ENTROPY_ITERATION edit \"$menu\""
+      $term -- sh -c "pass-otp $ENTROPY_ARGS edit \"$menu\""
     else
-      $term -- sh -c "pass-otp -n -d zenity edit \"$menu\""
+      $term -- sh -c "pass-otp $NORMAL_ARGS edit \"$menu\""
     fi
     ;;
   recuva)
     if [ "$ENTROPY_AMPLIFICATION" = "true" ]; then
-      $term -- sh -c "pass-otp -n -d zenity -a -s $ENTROPY_SALT -i $ENTROPY_ITERATION recuva \"$menu\""
+      $term -- sh -c "pass-otp $ENTROPY_ARGS recuva \"$menu\""
     else
-      $term -- sh -c "pass-otp -n -d zenity recuva \"$menu\""
+      $term -- sh -c "pass-otp $NORMAL_ARGS recuva \"$menu\""
     fi
     ;;
   esac
@@ -227,23 +244,23 @@ main() {
     case "$mode" in
     pass)
       if [ "$ENTROPY_AMPLIFICATION" = "true" ]; then
-        pass -d zenity -n -a -s "$ENTROPY_SALT" -i "$ENTROPY_ITERATION" "$menu"
+        pass "$ENTROPY_ARGS" cp "$menu"
       else
-        pass -d zenity -n cp "$menu"
+        pass "$NORMAL_ARGS" cp "$menu"
       fi
       ;;
     otp)
       if [ "$ENTROPY_AMPLIFICATION" = "true" ]; then
-        pass-otp -d zenity -n -a -s "$ENTROPY_SALT" -i "$ENTROPY_ITERATION" cp "$menu"
+        pass-otp "$ENTROPY_ARGS" cp "$menu"
       else
-        pass-otp -d zenity -n cp "$menu"
+        pass-otp "$NORMAL_ARGS" cp "$menu"
       fi
       ;;
     recuva)
       if [ "$ENTROPY_AMPLIFICATION" = "true" ]; then
-        pass-otp -d zenity -n -a -s "$ENTROPY_SALT" -i "$ENTROPY_ITERATION" recuva "$menu"
+        pass-otp "$ENTROPY_ARGS" recuva "$menu"
       else
-        pass-otp -d zenity -n recuva "$menu"
+        pass-otp "$NORMAL_ARGS" recuva "$menu"
       fi
       ;;
     esac
@@ -251,7 +268,7 @@ main() {
   esac
 }
 
-while getopts ":hvgek:" opt; do
+while getopts ":hvgedk:" opt; do
   case "$opt" in
   h)
     usage
@@ -260,6 +277,9 @@ while getopts ":hvgek:" opt; do
   v)
     version
     exit 0
+    ;;
+  -d)
+    DIALOG=custom
     ;;
   e)
     EXHUME=true
