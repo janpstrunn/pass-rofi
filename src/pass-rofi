@@ -25,7 +25,7 @@ div_color="#334433"
 label="#f067fc"
 
 if [ ! -d "$PASS_STORE" ]; then
-  notify-send -u normal "Pass: Error" "No PASS_STORE found!"
+  notify-send -u normal "Pass: Error" "No PASS_STORE found!" --expire-time=3500
 fi
 
 if ls "$PASS_STORE"; then
@@ -73,19 +73,19 @@ function version() {
 }
 
 function error() {
-  notify-send -u normal "Pass: Error" "An unknown error occurred!"
+  notify-send -u critical "Pass: Error" "An unknown error occurred!" --expire-time=5000
 }
 
 function tomb_open() {
   TOMB_KEY=${TOMB_KEY:-$(sed -n 's/^TOMB_KEY=//p' "$PASSRC")}
   if [ "$EXHUME" = "true" ] && [ "$GPG_ID" = "true" ]; then
-    pass-tomb -e -g open "$TOMB_KEY"
+    pass-tomb -n -e -g open "$TOMB_KEY"
   elif [ "$EXHUME" = "true" ]; then
-    pass-tomb -e open "$TOMB_KEY"
+    pass-tomb -n -e open "$TOMB_KEY"
   elif [ "$GPG_ID" = "true" ]; then
-    pass-tomb -g open "$TOMB_KEY"
+    pass-tomb -n -g open "$TOMB_KEY"
   else
-    pass-tomb open "$TOMB_KEY"
+    pass-tomb -n open "$TOMB_KEY"
   fi
 }
 
@@ -93,19 +93,23 @@ function deleteMenu() {
   delask=$(echo -e "1. Yes\n2. No" | _rofi -p '> ' -mesg "<span color='${label}'>Really delete</span> <span color='${help_color}'>$menu?</span>")
   val=$?
   if [[ $val -eq 1 ]]; then
-    notify-send -u low "Pass: Delete" "Cancelled!"
+    notify-send -u low "Pass: Delete" "Cancelled!" --expire-time=3500
     mode=pass main
   fi
   if [[ "$delask" == "1. Yes" ]]; then
     case "$mode" in
     pass)
-      pass -n -f rm "$menu" || error
+      pass -n -f rm "$menu"
       ;;
     otp)
-      pass-otp -n -f rm "$menu" || error
+      pass-otp -n -f rm "$menu"
       ;;
     recuva)
-      rm "$menu" || error
+      rm "$menu" || notify-send -u critical "Pass: Error" "Failed to remove file!"
+      val=$?
+      if [ "$val" -eq 0 ]; then
+        exit 1
+      fi
       git -C "$passdir" add "$menu" &&
         git -C "$passdir" commit "$menu" -m "Delete recovery key $menu"
       ;;
@@ -118,16 +122,16 @@ function addMenu() {
   addmenu=$(echo | _rofi -p '> ' -mesg "<span color='${label}'>Usage: </span>Insert directory/passname")
   val=$?
   if [[ $val -eq 1 ]]; then
-    notify-send -u low "Pass: Add" "Cancelled!"
+    notify-send -u low "Pass: Add" "Cancelled!" --expire-time=3500
     mode=pass main
   elif [[ $val -eq 0 ]]; then
     case "$mode" in
     pass)
-      pass -n -d zenity generate "$addmenu" 72 || error
+      pass -n -d zenity generate "$addmenu" 72
       ;;
     otp)
       otp_key=$(zenity --entry --title="Enter OTP Key" --text="Please enter your OTP Key. No spaces allowed:")
-      pass-otp -n -d zenity generate "$addmenu" "$otp_key" || error
+      pass-otp -n -d zenity generate "$addmenu" "$otp_key"
       ;;
     recuva)
       if [ "$ENTROPY_AMPLIFICATION" = "true" ]; then
@@ -212,11 +216,11 @@ main() {
     pass -n close
     ;;
   16)
-    tomb slam && notify-send -u normal "Pass: Tomb" "Your tomb is closed"
+    tomb slam && notify-send -u normal "Pass: Tomb" "Your tomb is closed" --expire-time=3500
     ;;
   17)
     TOMB_KEY=${TOMB_KEY:-$(sed -n 's/^TOMB_KEY=//p' "$PASSRC")}
-    tomb_open "$TOMB_KEY" && notify-send -u normal "Pass: Tomb" "Your tomb is open"
+    tomb_open "$TOMB_KEY"
     main
     ;;
   0)
