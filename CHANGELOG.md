@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.2.0] 2025-03-20
+
+### Added
+
+- Use a custom dialog tool from `.passrc`
+
 ## [1.1.0] 2025-03-20
 
 ### Added

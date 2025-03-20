@@ -36,6 +36,7 @@ pass-rofi: A rofi extension for pass
 Usage: $0 [options] <command> [arguments]
 
 Options:
+  -d             Enable custom dialog
   -e             Exhume buried key to unlock a tomb
   -k [-e -g]     Specify a Tomb Key if not present in .passrc
   -g             Create a tomb key using GPG ID
