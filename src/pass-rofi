@@ -24,8 +24,8 @@ else
   NOTIFICATION_CMD=zenity
 fi
 
-ENTROPY_ARGS="-n -d $NOTIFICATION_CMD -a -s $ENTROPY_SALT -i $ENTROPY_ITERATION"
-NORMAL_ARGS="-n -d $NOTIFICATION_CMD"
+ENTROPY_ARGS=(-n -d "$NOTIFICATION_CMD" -a -s "$ENTROPY_SALT" -i "$ENTROPY_ITERATION")
+NORMAL_ARGS=(-n -d "$NOTIFICATION_CMD")
 
 switch_mode="Ctrl+s"
 addpass="Alt+a"
@@ -144,17 +144,17 @@ function addMenu() {
   elif [[ $val -eq 0 ]]; then
     case "$mode" in
     pass)
-      pass "$NORMAL_ARGS" generate "$addmenu" 72
+      pass "${NORMAL_ARGS[@]}" generate "$addmenu" 72
       ;;
     otp)
       otp_key=$(zenity --entry --title="Enter OTP Key" --text="Please enter your OTP Key. No spaces allowed:")
-      pass-otp "$NORMAL_ARGS" generate "$addmenu" "$otp_key"
+      pass-otp "${NORMAL_ARGS[@]}" generate "$addmenu" "$otp_key"
       ;;
     recuva)
       if [ "$ENTROPY_AMPLIFICATION" = "true" ]; then
-        pass-otp "$ENTROPY_ARGS" recuva "$addmenu"
+        pass-otp "${ENTROPY_ARGS[@]}" recuva "$addmenu"
       else
-        pass-otp "$NORMAL_ARGS" recuva "$addmenu"
+        pass-otp "${NORMAL_ARGS[@]}" recuva "$addmenu"
       fi
       ;;
     esac
@@ -167,16 +167,16 @@ function editMenu() {
   case "$mode" in
   otp)
     if [ "$ENTROPY_AMPLIFICATION" = "true" ]; then
-      $term -- sh -c "pass-otp $ENTROPY_ARGS edit \"$menu\""
+      $term -- sh -c "pass-otp ${ENTROPY_ARGS[@]} edit \"$menu\""
     else
-      $term -- sh -c "pass-otp $NORMAL_ARGS edit \"$menu\""
+      $term -- sh -c "pass-otp ${NORMAL_ARGS[@]} edit \"$menu\""
     fi
     ;;
   recuva)
     if [ "$ENTROPY_AMPLIFICATION" = "true" ]; then
-      $term -- sh -c "pass-otp $ENTROPY_ARGS recuva \"$menu\""
+      $term -- sh -c "pass-otp ${ENTROPY_ARGS[@]} recuva \"$menu\""
     else
-      $term -- sh -c "pass-otp $NORMAL_ARGS recuva \"$menu\""
+      $term -- sh -c "pass-otp ${NORMAL_ARGS[@]} recuva \"$menu\""
     fi
     ;;
   esac
@@ -244,23 +244,23 @@ main() {
     case "$mode" in
     pass)
       if [ "$ENTROPY_AMPLIFICATION" = "true" ]; then
-        pass "$ENTROPY_ARGS" cp "$menu"
+        pass "${ENTROPY_ARGS[@]}" cp "$menu"
       else
-        pass "$NORMAL_ARGS" cp "$menu"
+        pass "${NORMAL_ARGS[@]}" cp "$menu"
       fi
       ;;
     otp)
       if [ "$ENTROPY_AMPLIFICATION" = "true" ]; then
-        pass-otp "$ENTROPY_ARGS" cp "$menu"
+        pass-otp "${ENTROPY_ARGS[@]}" cp "$menu"
       else
-        pass-otp "$NORMAL_ARGS" cp "$menu"
+        pass-otp "${NORMAL_ARGS[@]}" cp "$menu"
       fi
       ;;
     recuva)
       if [ "$ENTROPY_AMPLIFICATION" = "true" ]; then
-        pass-otp "$ENTROPY_ARGS" recuva "$menu"
+        pass-otp "${ENTROPY_ARGS[@]}" recuva "$menu"
       else
-        pass-otp "$NORMAL_ARGS" recuva "$menu"
+        pass-otp "${NORMAL_ARGS[@]}" recuva "$menu"
       fi
       ;;
     esac
