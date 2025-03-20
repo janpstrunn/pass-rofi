@@ -7,10 +7,10 @@
 
 It's a tool that combines all the `pass`, `pass-otp` and `pass-tomb` functionalities within `rofi` to allow you to easily get the passwords you need faster than anyone else.
 
-<a href="./assets/pass-rofi.png">
+<div align="center">
   <img src="./assets/pass-rofi.png" alt="pass-rofi image">
   <p>pass-rofi with Elegant Vagrant Theme</p>
-</a>
+</div>
 
 ## Features
 
