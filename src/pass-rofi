@@ -69,7 +69,7 @@ _rofi() {
 }
 
 function version() {
-  echo "v.1.0.0"
+  echo "v.1.1.0"
 }
 
 function error() {
@@ -79,11 +79,11 @@ function error() {
 function tomb_open() {
   TOMB_KEY=${TOMB_KEY:-$(sed -n 's/^TOMB_KEY=//p' "$PASSRC")}
   if [ "$EXHUME" = "true" ] && [ "$GPG_ID" = "true" ]; then
-    pass-tomb -e open "$TOMB_KEY" -g
+    pass-tomb -e -g open "$TOMB_KEY"
   elif [ "$EXHUME" = "true" ]; then
     pass-tomb -e open "$TOMB_KEY"
   elif [ "$GPG_ID" = "true" ]; then
-    pass-tomb open "$TOMB_KEY" -g
+    pass-tomb -g open "$TOMB_KEY"
   else
     pass-tomb open "$TOMB_KEY"
   fi
@@ -103,6 +103,11 @@ function deleteMenu() {
       ;;
     otp)
       pass-otp -n -f rm "$menu" || error
+      ;;
+    recuva)
+      rm "$menu" || error
+      git -C "$passdir" add "$menu" &&
+        git -C "$passdir" commit "$menu" -m "Delete recovery key $menu"
       ;;
     esac
   fi
@@ -124,6 +129,13 @@ function addMenu() {
       otp_key=$(zenity --entry --title="Enter OTP Key" --text="Please enter your OTP Key. No spaces allowed:")
       pass-otp -n -d zenity generate "$addmenu" "$otp_key" || error
       ;;
+    recuva)
+      if [ "$ENTROPY_AMPLIFICATION" = "true" ]; then
+        pass-otp -n -a -s "$ENTROPY_SALT" -i "$ENTROPY_ITERATION" recuva "$addmenu"
+      else
+        pass-otp -n recuva "$addmenu"
+      fi
+      ;;
     esac
   fi
   mode=pass main
@@ -133,10 +145,18 @@ function editMenu() {
   term=${TERMCMD:-kitty}
   case "$mode" in
   otp)
-    $term -- sh -c "pass-otp -d zenity edit \"$menu\""
+    if [ "$ENTROPY_AMPLIFICATION" = "true" ]; then
+      $term -- sh -c "pass-otp -n -d zenity -a -s $ENTROPY_SALT -i $ENTROPY_ITERATION edit \"$menu\""
+    else
+      $term -- sh -c "pass-otp -n -d zenity edit \"$menu\""
+    fi
     ;;
   recuva)
-    $term -- sh -c "pass-otp -d zenity recuva \"$menu\""
+    if [ "$ENTROPY_AMPLIFICATION" = "true" ]; then
+      $term -- sh -c "pass-otp -n -d zenity -a -s $ENTROPY_SALT -i $ENTROPY_ITERATION recuva \"$menu\""
+    else
+      $term -- sh -c "pass-otp -n -d zenity recuva \"$menu\""
+    fi
     ;;
   esac
 }
@@ -149,16 +169,18 @@ main() {
 <span color='${label}'>Actions: </span> <span color='${help_color}'>${addpass}</span>: Add <span color='${div_color}'>|</span> <span color='${help_color}'>${delete}</span>: Delete"
     passdir="$PASSWORD_STORE"
     ;;
-  otp)
+  otp | recuva)
     HELP="<span color='${label}'>Modes: </span><span color='${help_color}'>${switch_mode}</span>: toggle (pass/otp) <span color='${div_color}'>|</span> <span color='${help_color}'>${recuva_mode}</span>: toggle recuva
 <span color='${label}'>Close: </span> <span color='${help_color}'>${close}</span>: close key <span color='${div_color}'>|</span> <span color='${help_color}'>${close_tomb}</span>: close tomb
 <span color='${label}'>Actions: </span><span color='${help_color}'>${addpass}</span>: Add <span color='${div_color}'>|</span> <span color='${help_color}'>${delete}</span>: Delete <span color='${div_color}'>|</span> <span color='${help_color}'>${edit}</span>: Edit"
-    passdir="$OTP_STORE"
-    ;;
-  recuva)
-    HELP="<span color='${label}'>Modes: </span><span color='${help_color}'>${switch_mode}</span>: toggle (pass/otp) <span color='${div_color}'>|</span> <span color='${help_color}'>${recuva_mode}</span>: toggle recuva
-<span color='${label}'>Close: </span> <span color='${help_color}'>${close}</span>: close key <span color='${div_color}'>|</span> <span color='${help_color}'>${close_tomb}</span>: close tomb"
-    passdir="$RECUVA_STORE"
+    case "$mode" in
+    otp)
+      passdir="$OTP_STORE"
+      ;;
+    recuva)
+      passdir="$RECUVA_STORE"
+      ;;
+    esac
     ;;
   esac
 
