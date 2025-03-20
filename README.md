@@ -10,9 +10,10 @@ It's a tool that combines all the `pass`, `pass-otp` and `pass-tomb` functionali
 ## Features
 
 - Create, copy and delete passwords
-- Create, copy, delete and edit OTP keys
-- Create and edit recovery keys
+- Create, copy, delete and edit OTP keys using nano
+- Create, delete and edit recovery keys using nano
 - Open and close a `tomb`
+- Customize master password and PIN dialog tool
 
 ## Requirements
 
@@ -24,7 +25,6 @@ It's a tool that combines all the `pass`, `pass-otp` and `pass-tomb` functionali
 ## Installation
 
 ```
-
 curl -sSL https://github.com/janpstrunn/pass-rofi/raw/main/install.sh | bash
 ```
 
