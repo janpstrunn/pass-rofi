@@ -7,15 +7,9 @@ PASSWORD_STORE="$PASS_STORE/passwords/"
 OTP_STORE="$PASS_STORE/otp/"
 RECUVA_STORE="$PASS_STORE/recovery/"
 
-ENTROPY_SALT=$(sed -n 's/^ENTROPY_SALT=//p' "$PASSRC")
-ENTROPY_ITERATION=$(sed -n 's/^ENTROPY_ITERATION=//p' "$PASSRC")
-ENTROPY_AMPLIFICATION=$(sed -n 's/^ENTROPY_AMPLIFICATION=//p' "$PASSRC")
-
-DIALOG=${DIALOG:-$(sed -n 's/^DIALOG=//p' "$PASSRC")}
+source "$PASSRC"
 
 if [ "$DIALOG" == "custom" ]; then
-  CUSTOM_CMD_PASSWORD=$(sed -n 's/^CUSTOM_CMD_PASSWORD=//p' "$PASSRC")
-  CUSTOM_CMD_PIN=$(sed -n 's/^CUSTOM_CMD_PASSWORD=//p' "$PASSRC")
   if [ -z "$CUSTOM_CMD_PASSWORD" ] || [ -z "$CUSTOM_CMD_PIN" ]; then
     notify-send -u critical "Pass: Error" "No custom commands in .passrc!" --expire-time=5000
   fi
@@ -94,7 +88,6 @@ function error() {
 }
 
 function tomb_open() {
-  TOMB_KEY=${TOMB_KEY:-$(sed -n 's/^TOMB_KEY=//p' "$PASSRC")}
   if [ "$EXHUME" = "true" ] && [ "$GPG_ID" = "true" ]; then
     pass-tomb -n -e -g open "$TOMB_KEY"
   elif [ "$EXHUME" = "true" ]; then
@@ -236,7 +229,6 @@ main() {
     tomb slam && notify-send -u normal "Pass: Tomb" "Your tomb is closed" --expire-time=3500
     ;;
   17)
-    TOMB_KEY=${TOMB_KEY:-$(sed -n 's/^TOMB_KEY=//p' "$PASSRC")}
     tomb_open "$TOMB_KEY"
     main
     ;;
