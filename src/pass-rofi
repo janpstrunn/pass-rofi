@@ -53,9 +53,13 @@ fi
 
 function usage() {
   cat <<EOF
-pass-rofi: A rofi extension for pass
+  ---------------------------------------------------
+  ---------------------pass-rofi---------------------
+  ---------------------------------------------------
+  -------------A rofi extension for pass-------------
+  ---------------------------------------------------
 
-Usage: $0 [options] <command> [arguments]
+Usage: pass-rofi [options] <command> [arguments]
 
 Options:
   -d             Enable custom dialog

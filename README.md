@@ -43,9 +43,7 @@ curl -sSL https://github.com/janpstrunn/pass-rofi/raw/main/install.sh | bash
   -------------A rofi extension for pass-------------
   ---------------------------------------------------
 
-pass-rofi: A rofi extension for pass
-
-Usage: $0 [options] <command> [arguments]
+Usage: pass-rofi [options] <command> [arguments]
 
 Options:
   -d             Enable custom dialog
