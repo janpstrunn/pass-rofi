@@ -1,7 +1,7 @@
 <img src="https://git.disroot.org/janpstrunn/images/raw/branch/main/pass.png" align="right" height="100"/>
 <br>
 
-# pass-rofi: Manage Your Passwords like an Orchestra
+# pass-rofi: Orchestrate your Passwords
 
 `pass-rofi` is an efficient `rofi` script designed to complement [pass](https://github.com/janpstrunn/pass), which aims to replace the [passwordstore](https://www.passwordstore.org/) while maintaining its core principles. This tool integrates the functionalities of `pass`, `pass-otp`, and `pass-tomb` within `rofi`, enabling you to access your passwords swiftly and effortlessly.
 
